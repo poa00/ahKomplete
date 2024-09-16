@@ -10,7 +10,6 @@
 SetWorkingDir %A_ScriptDir%   
 global originalClip
 
-#if !winActive("ahk_class Respawn001") ;this bit is for it to not trigger when certain applications are open
 !/::  ; alt+/ for keyboard trigger, pastes where the typing cursor is
   ahkomplete(0)
 return
@@ -18,7 +17,6 @@ return
 ^Rbutton::  ; ctrl+right click for mouse trigger, clicks on the mouse cursor position before pasting
   ahkomplete(1)
 return
-#if
 
 ahkomplete(clickBefore) {
     ;clickBefore - if 1 then it does a click where the mouse cursor is before doing its thing
