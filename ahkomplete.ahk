@@ -1,15 +1,24 @@
+; v1 - basic funcitonality
+; v1.1 - added ability to use 2 different shortcuts and decide on mouse click before pasting
+; v1.2 - added ability to use {tab}
+; v1.3 - fix so it doesnt {tab} after last input in the sequence
+; v1.4 - fix delete also all submenus at the end
+
 #NoEnv
 #Warn
 #SingleInstance Force
 SetWorkingDir %A_ScriptDir%   
 global originalClip
-!/::
+
+#if !winActive("ahk_class Respawn001") ;this bit is for it to not trigger when certain applications are open
+!/::  ; alt+/ for keyboard trigger, pastes where the typing cursor is
   ahkomplete(0)
 return
 
-^Rbutton::
+^Rbutton::  ; ctrl+right click for mouse trigger, clicks on the mouse cursor position before pasting
   ahkomplete(1)
 return
+#if
 
 ahkomplete(clickBefore) {
     ;clickBefore - if 1 then it does a click where the mouse cursor is before doing its thing
@@ -50,7 +59,7 @@ ahkomplete(clickBefore) {
         options := details[4]   ; parsing options
        
         if (group != "") {
-            ;bind function with a value, this is so its calleable from menu
+            ;bind function with a value, this is so its callable from menu
             print := Func("paste").Bind(value)
            
             ; Comments
@@ -78,30 +87,47 @@ ahkomplete(clickBefore) {
                     Menu ContextMenu, Add, &%groupNum%. %group%, % print
                 } else {      
                     Menu %groupNum%. %group% , Add, &%itemNum%. %item%, % print
-                    Menu ContextMenu, Add, &%groupNum%. %group%, :%groupNum%. %group%    
-                    
+                    Menu ContextMenu, Add, &%groupNum%. %group%, :%groupNum%. %group%                        
                 }
             }                    
         }   
     }
     Menu ContextMenu, Show
-    Menu ContextMenu, DeleteAll ;Throw away the menu and make a new one each time 
-                                ;so you dont have to reload script when you edit the content 
+    ;Throw away the menu and all submenus
+    ;so you dont have to reload script when you edit the data.text 
+    loop, groupNum {
+        Menu %groupNum%, DeleteAll
+    }
+    Menu ContextMenu, DeleteAll                                 
 }
 
 paste(out) {
-    clipboard = %out%    
-    clipwait,1
-    sleep, 100
-    SendInput ^v
-    ;return the thing you had in clipboard before
-    sleep,100
-    clipboard = %originalClip%
-    clipwait,1
-    sleep,100
+    ;if there is {tab} in the value, it splits the value based on it and sends a tab press between each
+    if inStr(out, "{tab}") > 0 {
+        fields:= StrSplit(out,"{tab}")
+        for index, element in fields {
+            clipboard = %element% 
+            clipwait,1
+            sleep, 100
+            SendInput ^v
+            sleep, 100
+            if (index <= (fields.Length()-1)) {   ;so it doesnt tab after the last paste
+                sendInput {tab}
+            }
+        }
+        sleep,100
+        clipboard = %originalClip%
+        clipwait,1
+        sleep,100
+    } else {
+        clipboard = %out%    
+        clipwait,1
+        sleep, 100
+        SendInput ^v
+        ;return the thing you had in clipboard before
+        sleep,100
+        clipboard = %originalClip%
+        clipwait,1
+        sleep,100
+    }
 }
-
-
-
-
-
